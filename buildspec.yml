@@ -1,47 +1,21 @@
 version: 0.2
 
-env:
-  variables:
-    LAMBDA_FUNCTION_NAME: "event-link"
-    S3_BUCKET: "event-link-lamba"
-
 phases:
   install:
     runtime-versions:
       nodejs: 20
     commands:
       - npm install
-      - npm install -g esbuild
-
   build:
     commands:
-      - echo "Bundling with esbuild..."
-      - esbuild lambda.ts \
-          --bundle \
-          --platform=node \
-          --target=node20 \
-          --format=cjs \
-          --outfile=lambda.js \
-          --external:@aws-sdk/*
-      
-      - echo "Bundle created:"
-      - ls -lh lambda.js
-      
-      - echo "Creating zip..."
-      - zip function.zip lambda.js appspec.yml
-
-      - echo "Zip contents:"
-      - unzip -l function.zip
-
+      - echo "Zipping source code..."
+      - zip -r function.zip node_modules lambda.js src package.json package-lock.json appspec.yml
   post_build:
     commands:
-      - S3_KEY="function.zip"
-      - aws s3 cp function.zip "s3://${S3_BUCKET}/${S3_KEY}"
-      
-      - aws lambda update-function-code \
-          --function-name ${LAMBDA_FUNCTION_NAME} \
-          --s3-bucket ${S3_BUCKET} \
-          --s3-key ${S3_KEY}
+      - echo "Uploading to S3..."
+      - aws s3 cp function.zip s3://event-link-lamba/function.zip
+      - echo "Updating Lambda function code..."
+      - aws lambda update-function-code --function-name event-link --s3-bucket event-link-lamba --s3-key function.zip
 
 artifacts:
   files:
