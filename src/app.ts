@@ -28,8 +28,10 @@ app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+  });
+}
 
-export default app;
+export { app };

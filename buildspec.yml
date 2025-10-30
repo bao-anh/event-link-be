@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   variables:
+    NODE_OPTIONS: "--max_old_space_size=4096"
     LAMBDA_FUNCTION_NAME: "event-link"
-    LAYER_NAME: "event-link-dependencies"
     S3_BUCKET: "event-link-lamba"
 
 phases:
@@ -11,76 +11,33 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo "Installing dependencies..."
-      - npm install
-      - npm install -g typescript
+      - npm install -g npm@10
 
   build:
     commands:
-      - echo "=== CREATING LAMBDA LAYER ==="
-      
-      - echo "Preparing layer structure..."
-      - mkdir -p layer/nodejs
-      - cp package.json package-lock.json layer/nodejs/
-      - cd layer/nodejs
-      - npm install --production  # Only production dependencies
-      - cd ../..
-      
-      - echo "Creating layer zip..."
-      - cd layer
-      - zip -r ../layer.zip nodejs/
-      - cd ..
-      
-      - echo "Layer size:"
-      - ls -lh layer.zip
-      
-      - echo "=== CREATING FUNCTION PACKAGE ==="
-      
-      - echo "Creating function zip without node_modules..."
-      - zip -r function.zip lambda.js src package.json appspec.yml
-      
-      - echo "Function size:"
-      - ls -lh function.zip
+      - echo "Installing dependencies"
+      - npm ci
+      - echo "Cleaning previous build artifacts"
+      - rm -rf dist function.zip
+      - echo "Building Lambda bundle with esbuild"
+      - npm run build
+      - echo "Packaging bundled output"
+      - zip -r function.zip dist appspec.yml
 
   post_build:
     commands:
-      - echo "=== DEPLOYING LAYER ==="
-      
-      - echo "Uploading layer to S3..."
-      - aws s3 cp layer.zip s3://${S3_BUCKET}/layers/layer-${CODEBUILD_BUILD_NUMBER}.zip
-      
-      - echo "Publishing Lambda Layer..."
-      - LAYER_VERSION=$(aws lambda publish-layer-version --layer-name ${LAYER_NAME} --description "Build ${CODEBUILD_BUILD_NUMBER}" --content S3Bucket=${S3_BUCKET},S3Key=layers/layer-${CODEBUILD_BUILD_NUMBER}.zip --compatible-runtimes nodejs18.x --query 'Version' --output text)
-
-      - echo "Published Layer Version = ${LAYER_VERSION}"
-
-      - LAYER_ARN=$(aws lambda list-layer-versions --layer-name ${LAYER_NAME} --query 'LayerVersions[0].LayerVersionArn' --output text)
-
-      - echo "Layer ARN = ${LAYER_ARN}"
-      
-      - echo "=== DEPLOYING FUNCTION ==="
-      
-      - echo "Uploading function to S3..."
-      - aws s3 cp function.zip s3://${S3_BUCKET}/function.zip
-      
-      - echo "Updating Lambda function code..."
-      - aws lambda update-function-code --function-name ${LAMBDA_FUNCTION_NAME} --s3-bucket ${S3_BUCKET} --s3-key function.zip
-
-      - echo "Waiting for update to complete..."
-      - aws lambda wait function-updated --function-name ${LAMBDA_FUNCTION_NAME}
-
-      - echo "Attaching layer to function..."
-      - aws lambda update-function-configuration --function-name ${LAMBDA_FUNCTION_NAME} --layers ${LAYER_ARN}
-      
-      - echo "Waiting for update to complete..."
-      - aws lambda wait function-updated --function-name ${LAMBDA_FUNCTION_NAME}
-      
-      - echo "=== DEPLOYMENT COMPLETE ==="
-      - echo "Function code size = $(ls -lh function.zip | awk '{print $5}')"
-      - echo "Layer attached = ${LAYER_ARN}"
+      - PACKAGE_KEY="function.zip"
+      - echo "Uploading bundle to s3://${S3_BUCKET}/${PACKAGE_KEY}"
+      - aws s3 cp function.zip "s3://${S3_BUCKET}/${PACKAGE_KEY}"
+      - echo "Updating Lambda function code from S3 artifact"
+      - aws lambda update-function-code --function-name "${LAMBDA_FUNCTION_NAME}" --s3-bucket "${S3_BUCKET}" --s3-key "${PACKAGE_KEY}"
 
 artifacts:
   files:
     - function.zip
-    - layer.zip
     - appspec.yml
+    - dist/**/*
+
+cache:
+  paths:
+    - node_modules/**/*
