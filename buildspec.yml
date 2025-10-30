@@ -1,48 +1,21 @@
-﻿version: 0.2
-
-env:
-  variables:
-    NODE_OPTIONS: "--max_old_space_size=4096"
-    STAGE_NAME: "dev"
-    PACKAGE_DIR: "package"
+version: 0.2
 
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 20
     commands:
-      - npm install -g npm@10
-  pre_build:
-    commands:
-      - echo "Installing dependencies"
-      - npm ci
+      - npm install
   build:
     commands:
-      - echo "Compiling TypeScript"
-      - npm run build
-      - echo "Pruning dev dependencies for Lambda package"
-      - npm prune --omit=dev
-      - echo "Creating deployment bundle"
-      - rm -rf "${PACKAGE_DIR}"
-      - mkdir -p "${PACKAGE_DIR}"
-      - cp package.json "${PACKAGE_DIR}/"
-      - cp -r dist "${PACKAGE_DIR}/"
-      - cp -r node_modules "${PACKAGE_DIR}/"
-      - if [ -d "scripts/post-deploy" ]; then cp -r scripts/post-deploy "${PACKAGE_DIR}/"; fi
-      - cd "${PACKAGE_DIR}"
-      - zip -r9 ../event-link.zip .
-      - cd ..
+      - echo "Zipping source code..."
+      - zip -r function.zip node_modules lambda.js src package.json package-lock.json appspec.yml
   post_build:
     commands:
-      - echo "Writing deployment metadata"
-      - printf '{"gitCommit":"%s","stage":"%s"}' "$CODEBUILD_RESOLVED_SOURCE_VERSION" "$STAGE_NAME" > event-link-metadata.json
+      - echo "Updating Lambda function code..."
+      - aws lambda update-function-code --function-name event-link --zip-file fileb://function.zip
 
 artifacts:
   files:
-    - event-link.zip
-    - event-link-metadata.json
-  discard-paths: yes
-
-cache:
-  paths:
-    - node_modules/**/*
+    - function.zip
+    - appspec.yml
