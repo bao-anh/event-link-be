@@ -55,16 +55,16 @@ phases:
           --content S3Bucket=${S3_BUCKET},S3Key=layers/layer-${CODEBUILD_BUILD_NUMBER}.zip \
           --compatible-runtimes nodejs18.x \
           --query 'Version' \
-          --output text)
-      
-      - echo "Published Layer Version: ${LAYER_VERSION}"
+          --output text) 
+
+      - echo "Published Layer Version = ${LAYER_VERSION}"
       
       - LAYER_ARN=$(aws lambda list-layer-versions \
           --layer-name ${LAYER_NAME} \
           --query 'LayerVersions[0].LayerVersionArn' \
           --output text)
       
-      - echo "Layer ARN: ${LAYER_ARN}"
+      - echo "Layer ARN = ${LAYER_ARN}"
       
       - echo "=== DEPLOYING FUNCTION ==="
       
@@ -86,8 +86,8 @@ phases:
       - aws lambda wait function-updated --function-name ${LAMBDA_FUNCTION_NAME}
       
       - echo "=== DEPLOYMENT COMPLETE ==="
-      - echo "Function code size: $(ls -lh function.zip | awk '{print $5}')"
-      - echo "Layer attached: ${LAYER_ARN}"
+      - echo "Function code size = $(ls -lh function.zip | awk '{print $5}')"
+      - echo "Layer attached = ${LAYER_ARN}"
 
 artifacts:
   files:
