@@ -3,7 +3,7 @@ import { app } from './app';
 
 export const handler = serverlessExpress({
   app,
-  eventSourceName: 'AWS_API_GATEWAY_V2',
+  eventSourceName: 'AWS_API_GATEWAY_V1',
 });
 
 export default handler;
