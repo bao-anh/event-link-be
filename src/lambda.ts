@@ -29,18 +29,27 @@ const detectEventSource = (event: unknown): EventSourceName | undefined => {
   if (event && typeof event === 'object') {
     const payload = event as Record<string, unknown>;
 
-    if (payload.version === '2.0' && typeof payload.requestContext === 'object') {
-      const requestContext = payload.requestContext as Record<string, unknown>;
-      if (requestContext?.http) {
-        return 'AWS_API_GATEWAY_V2';
-      }
+    const requestContext = payload.requestContext as Record<string, unknown> | undefined;
+
+    if (
+      payload.version === '2.0' &&
+      requestContext &&
+      typeof requestContext === 'object' &&
+      requestContext.http
+    ) {
+      return 'AWS_API_GATEWAY_V2';
     }
 
     if (
       typeof payload.httpMethod === 'string' ||
-      (payload.requestContext &&
-        typeof payload.requestContext === 'object' &&
-        'identity' in (payload.requestContext as Record<string, unknown>))
+      (requestContext &&
+        typeof requestContext === 'object' &&
+        ('identity' in requestContext ||
+          'resourceId' in requestContext ||
+          'resourcePath' in requestContext ||
+          'stage' in requestContext)) ||
+      typeof payload.resource === 'string' ||
+      typeof payload.path === 'string'
     ) {
       return 'AWS_API_GATEWAY_V1';
     }
