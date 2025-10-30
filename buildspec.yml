@@ -1,23 +1,43 @@
 version: 0.2
 
+env:
+  variables:
+    NODE_OPTIONS: "--max_old_space_size=4096"
+    LAMBDA_FUNCTION_NAME: "event-link"
+    S3_BUCKET: "event-link-lamba"
+    S3_KEY_PREFIX: "artifacts"
+
 phases:
   install:
     runtime-versions:
-      nodejs: 20
+      nodejs: 18
     commands:
-      - npm install
+      - npm install -g npm@10
+  pre_build:
+    commands:
+      - echo "Installing dependencies"
+      - npm ci
   build:
     commands:
-      - echo "Zipping source code..."
-      - zip -r function.zip node_modules lambda.js src package.json package-lock.json appspec.yml
+      - echo "Cleaning previous build artifacts"
+      - rm -rf dist function.zip
+      - echo "Bundling Lambda with esbuild"
+      - npm run build
+      - echo "Packaging bundled output"
+      - zip -j function.zip dist/lambda.js dist/lambda.js.map
   post_build:
     commands:
-      - echo "Uploading to S3..."
-      - aws s3 cp function.zip s3://event-link-lamba/function.zip
-      - echo "Updating Lambda function code..."
-      - aws lambda update-function-code --function-name event-link --s3-bucket event-link-lamba --s3-key function.zip
+      - PACKAGE_KEY="function.zip"
+      - echo "Uploading bundle to s3://${S3_BUCKET}/${PACKAGE_KEY}"
+      - aws s3 cp function.zip "s3://${S3_BUCKET}/${PACKAGE_KEY}"
+      - echo "Updating Lambda function code from S3 artifact"
+      - aws lambda update-function-code --function-name "${LAMBDA_FUNCTION_NAME}" --s3-bucket "${S3_BUCKET}" --s3-key "${PACKAGE_KEY}"
 
 artifacts:
   files:
     - function.zip
-    - appspec.yml
+    - dist/**/*
+
+cache:
+  paths:
+    - node_modules/**/*
