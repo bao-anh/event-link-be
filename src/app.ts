@@ -20,6 +20,9 @@ app.use('/todos', todosRouter);
 // Health check route
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+// Health check route
+app.get('/', (req, res) => res.json({ status: 'ok', message: 'Welcome to Event Link API' }));
+
 // Error handler (last)
 app.use(errorHandler);
 
