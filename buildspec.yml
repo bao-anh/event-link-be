@@ -24,7 +24,7 @@ phases:
       - echo "Bundling Lambda with esbuild"
       - npm run build
       - echo "Packaging bundled output"
-      - zip -j function.zip dist/lambda.js dist/lambda.js.map
+      - zip -j function.zip dist/lambda.js dist/lambda.js.map appspec.yml
   post_build:
     commands:
       - PACKAGE_KEY="function.zip"
@@ -36,6 +36,7 @@ phases:
 artifacts:
   files:
     - function.zip
+    - appspec.yml
     - dist/**/*
 
 cache:
