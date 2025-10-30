@@ -24,7 +24,7 @@ phases:
       - echo "Pruning dev dependencies"
       - npm prune --omit=dev
       - echo "Packaging deployment bundle"
-      - zip -r function.zip dist package.json package-lock.json node_modules appspec.yml
+      - zip -r function.zip dist node_modules appspec.yml
 
   post_build:
     commands:
