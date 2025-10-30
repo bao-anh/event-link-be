@@ -1,0 +1,32 @@
+import 'express-async-errors';
+import express from 'express';
+import cors from 'cors';
+import timeout from 'connect-timeout';
+import todosRouter from './routes/todos';
+import { errorHandler } from './middleware/errorHandler';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// Per-request timeout (30s)
+app.use(timeout('30s'));
+
+// Todo routes (uses dedicated router)
+app.use('/todos', todosRouter);
+
+
+// Health check route
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Error handler (last)
+app.use(errorHandler);
+
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+export { app };
