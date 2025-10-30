@@ -5,7 +5,7 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const entryPoint = path.resolve(__dirname, 'src/lambda.ts');
+const entryPoint = path.resolve(__dirname, 'src/lambda.js');
 const outfile = path.resolve(__dirname, 'dist/lambda.js');
 
 await build({
