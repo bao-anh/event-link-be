@@ -2,7 +2,7 @@
   "name": "event-link",
   "version": "1.0.0",
   "description": "Todo List backend with Express, TypeScript, Lambda, and DynamoDB",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/app.ts",
