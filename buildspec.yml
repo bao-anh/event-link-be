@@ -9,11 +9,13 @@ phases:
   build:
     commands:
       - echo "Zipping source code..."
-      - zip -r function.zip node_modules lambda.js src package.json package-lock.json appspec.yml
+      - zip -r function.zip node_modules lambda.ts src package.json package-lock.json appspec.yml
   post_build:
     commands:
+      - echo "Uploading to S3..."
+      - aws s3 cp function.zip s3://event-link-lamba/function.zip
       - echo "Updating Lambda function code..."
-      - aws lambda update-function-code --function-name event-link --zip-file fileb://function.zip
+      - aws lambda update-function-code --function-name event-link --s3-bucket event-link-lamba --s3-key function.zip
 
 artifacts:
   files:
