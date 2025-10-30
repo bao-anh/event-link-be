@@ -19,10 +19,12 @@ phases:
       - npm ci
       - echo "Cleaning previous build artifacts"
       - rm -rf dist function.zip
-      - echo "Building Lambda bundle with esbuild"
+      - echo "Compiling TypeScript"
       - npm run build
-      - echo "Packaging bundled output"
-      - zip -r function.zip dist appspec.yml
+      - echo "Pruning dev dependencies"
+      - npm prune --omit=dev
+      - echo "Packaging deployment bundle"
+      - zip -r function.zip dist node_modules appspec.yml
 
   post_build:
     commands:
