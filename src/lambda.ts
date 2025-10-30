@@ -4,10 +4,13 @@ import { app } from './app';
 
 type EventSourceName = 'AWS_API_GATEWAY_V1' | 'AWS_API_GATEWAY_V2';
 
+const DEFAULT_EVENT_SOURCE: EventSourceName =
+  (process.env.LAMBDA_EVENT_SOURCE as EventSourceName) || 'AWS_API_GATEWAY_V2';
+
 const handlerCache = new Map<string, ReturnType<typeof serverlessExpress>>();
 
-const getExpressHandler = (eventSourceName?: EventSourceName) => {
-  const key = eventSourceName ?? 'auto';
+const getExpressHandler = (eventSourceName: EventSourceName) => {
+  const key = eventSourceName;
 
   if (!handlerCache.has(key)) {
     handlerCache.set(
@@ -47,8 +50,15 @@ const detectEventSource = (event: unknown): EventSourceName | undefined => {
 };
 
 export const handler: Handler = (event, context, callback) => {
+  const fallbackSource = DEFAULT_EVENT_SOURCE;
   const eventSource = detectEventSource(event);
-  const expressHandler = getExpressHandler(eventSource);
+  if (!eventSource) {
+    console.warn(
+      'serverlessExpress: falling back to default event source',
+      fallbackSource,
+    );
+  }
+  const expressHandler = getExpressHandler(eventSource ?? fallbackSource);
   return expressHandler(event, context, callback);
 };
 
