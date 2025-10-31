@@ -10,7 +10,7 @@ const clientConfig: DynamoDBClientConfig = {
 
 // Only add credentials and endpoint for local development
 if (process.env.NODE_ENV !== 'prod') {
-  clientConfig.endpoint = process.env.DYNAMODB_ENDPOINT;
+  clientConfig.endpoint = process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000';
   clientConfig.credentials = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'myAccessKey',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'mySecretKey',
