@@ -4,11 +4,13 @@ import cors from 'cors';
 import timeout from 'connect-timeout';
 import todosRouter from './routes/todos';
 import { errorHandler } from './middleware/errorHandler';
+import parseJsonBody from './middleware/parseJsonBody';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(parseJsonBody);
 app.use(express.urlencoded({ extended: true }));
 
 // Per-request timeout (30s)
