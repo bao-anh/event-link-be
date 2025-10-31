@@ -27,7 +27,7 @@ export class TodoController {
 
       res.json(todo);
     } catch (error) {
-      res.status(500).json({ error: 'Could not get todo' });
+      res.status(500).json({ error: JSON.stringify(error) });
     }
   }
 
